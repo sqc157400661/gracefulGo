@@ -1,5 +1,10 @@
 # Go编码规范
 
+## 规范分类
+- must   一定要执行的规范
+- should 强烈建议执行的规范，但不强求
+- may    可以执行的，供大家参考
+
 ## 参考文献列表
 - [uber-go/guide](https://github.com/xxjwxc/uber_go_guide_cn)
 - [go官方编程规范](https://github.com/golang/go/wiki/CodeReviewComments)
