@@ -12,21 +12,21 @@
 注释推荐用英文。
 
 ## 3、命名
-### 1、包名
+### （1）、包名
 - **全部小写**。没有大写或下划线。
 - 大多数使用命名导入的情况下，不需要重命名。
 - **简短而简洁**。请记住，在每个使用的地方都完整标识了该名称。
 - **不用复数**。例如net/url，而不是net/urls。
 - 不要用“util”，“shared”或“lib”。这些是不好的，信息量不足的名称。
 - 在引包的时候，需要注意不要使用相对路径，而应该使用**绝对路径**。
-### 2、变量名
+### （2）、变量名
  - 驼峰式命名,首字母小写,如`mixedCaps`
  - 变量命名应该尽可能短，尤其是局部变量。
  - 特殊的变量以及全局变量，我们可能需要对它有更多的描述，使用长命名是个不错的建议。
-### 3、函数名
+### （3）、函数名
 - 驼峰式命名，名字可以长但是得把功能，必要的参数描述清楚，函数名应当是动词或动词短语，如 `postPayment、deletePage、save`。
 - 例外:为了对相关的测试用例进行分组，函数名可能包含下划线，如：`TestMyFunction_WhatIsBeingTested`。
-### 4、函数返回值命名
+### （4）、函数返回值命名
 <table>
 <thead><tr><th>Bad</th><th>Good</th></tr></thead>
 <tbody>
@@ -50,9 +50,411 @@ func (n *Node) Parent2() (node *Node, err error)
 </td></tr>
 </tbody></table>
 
-### 5、结构体名
+### （5）、结构体名
 - 结构体名应该是名词或名词短语，如 `Custome、WikiPage、Account、AddressParser`。
 - 类名不应当是动词,避免使用 `Manager、Processor、Data、Info`这样的类名。
 - 属性和接收者方法，大写开头表示public，小写开头表示private。
-### 6、接口命名
+### （6）、接口命名
 - 单个函数的接口名以”er”作为后缀，如 Reader,Writer。接口的实现则去掉“er”。
+
+## 4、对于未导出的顶层常量和变量，使用_作为前缀
+在未导出的顶级`vars`和`consts`， 前面加上前缀_，以使它们在使用时明确表示它们是全局符号。
+
+例外：未导出的错误值，应以`err`开头。
+
+基本依据：顶级变量和常量具有包范围作用域。使用通用名称可能很容易在其他文件中意外使用错误的值。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+// foo.go
+
+const (
+  defaultPort = 8080
+  defaultUser = "user"
+)
+
+// bar.go
+
+func Bar() {
+  defaultPort := 9090
+  ...
+  fmt.Println("Default port", defaultPort)
+
+  // We will not see a compile error if the first line of
+  // Bar() is deleted.
+}
+```
+
+</td><td>
+
+```go
+// foo.go
+
+const (
+  _defaultPort = 8080
+  _defaultUser = "user"
+)
+```
+
+</td></tr>
+</tbody></table>
+
+## 5、结构体中的嵌入
+
+嵌入式类型（例如 mutex）应位于结构体内的字段列表的顶部，并且必须有一个空行将嵌入式字段与常规字段分隔开。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+type Client struct {
+  version int
+  http.Client
+}
+```
+
+</td><td>
+
+```go
+type Client struct {
+  http.Client
+
+  version int
+}
+```
+
+</td></tr>
+</tbody></table>
+
+内嵌应该提供切实的好处，比如以语义上合适的方式添加或增强功能。
+它应该在对用户不利影响的情况下完成这项工作（另请参见：`避免在公共结构中嵌入类型`[Avoid Embedding Types in Public Structs]）。
+
+  [Avoid Embedding Types in Public Structs]: #avoid-embedding-types-in-public-structs
+
+嵌入 **不应该**:
+
+- 纯粹是为了美观或方便。
+- 使外部类型更难构造或使用。
+- 影响外部类型的零值。如果外部类型有一个有用的零值，则在嵌入内部类型之后应该仍然有一个有用的零值。
+- 作为嵌入内部类型的副作用，从外部类型公开不相关的函数或字段。
+- 公开未导出的类型。
+- 影响外部类型的复制形式。
+- 更改外部类型的API或类型语义。
+- 嵌入内部类型的非规范形式。
+- 公开外部类型的实现详细信息。
+- 允许用户观察或控制类型内部。
+- 通过包装的方式改变内部函数的一般行为，这种包装方式会给用户带来一些意料之外情况。
+
+简单地说，有意识地和有目的地嵌入。一种很好的测试体验是，
+"是否所有这些导出的内部方法/字段都将直接添加到外部类型"
+如果答案是`some`或`no`，不要嵌入内部类型-而是使用字段。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+type A struct {
+    // Bad: A.Lock() and A.Unlock() 现在可用
+    // 不提供任何功能性好处，并允许用户控制有关A的内部细节。
+    sync.Mutex
+}
+```
+
+</td><td>
+
+```go
+type countingWriteCloser struct {
+    // Good: Write() 在外层提供用于特定目的，
+    // 并且委托工作到内部类型的Write()中。
+    io.WriteCloser
+    count int
+}
+func (w *countingWriteCloser) Write(bs []byte) (int, error) {
+    w.count += len(bs)
+    return w.WriteCloser.Write(bs)
+}
+```
+
+</td></tr>
+<tr><td>
+
+```go
+type Book struct {
+    // Bad: 指针更改零值的有用性
+    io.ReadWriter
+    // other fields
+}
+// later
+var b Book
+b.Read(...)  // panic: nil pointer
+b.String()   // panic: nil pointer
+b.Write(...) // panic: nil pointer
+```
+
+</td><td>
+
+```go
+type Book struct {
+    // Good: 有用的零值
+    bytes.Buffer
+    // other fields
+}
+// later
+var b Book
+b.Read(...)  // ok
+b.String()   // ok
+b.Write(...) // ok
+```
+
+</td></tr>
+<tr><td>
+
+```go
+type Client struct {
+    sync.Mutex
+    sync.WaitGroup
+    bytes.Buffer
+    url.URL
+}
+```
+
+</td><td>
+
+```go
+type Client struct {
+    mtx sync.Mutex
+    wg  sync.WaitGroup
+    buf bytes.Buffer
+    url url.URL
+}
+```
+
+</td></tr>
+</tbody></table>
+
+## 6、初始化结构体时指定字段名
+有3个字段及以上时：初始化结构体时，指定字段名称
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+k := User{"John", "Doe", true}
+```
+
+</td><td>
+
+```go
+k := User{
+    FirstName: "John",
+    LastName: "Doe",
+    Admin: true,
+}
+```
+
+</td></tr>
+</tbody></table>
+
+## 7、nil 是一个有效的 slice
+
+`nil` 是一个有效的长度为 0 的 slice，这意味着，
+
+- 您不应明确返回长度为零的切片。应该返回`nil` 来代替。
+
+  <table>
+  <thead><tr><th>Bad</th><th>Good</th></tr></thead>
+  <tbody>
+  <tr><td>
+
+  ```go
+  if x == "" {
+    return []int{}
+  }
+  ```
+
+  </td><td>
+
+  ```go
+  if x == "" {
+    return nil
+  }
+  ```
+
+  </td></tr>
+  </tbody></table>
+
+- 要检查切片是否为空，请始终使用`len(s) == 0`。而非 `nil`。
+
+  <table>
+  <thead><tr><th>Bad</th><th>Good</th></tr></thead>
+  <tbody>
+  <tr><td>
+
+  ```go
+  func isEmpty(s []string) bool {
+    return s == nil
+  }
+  ```
+
+  </td><td>
+
+  ```go
+  func isEmpty(s []string) bool {
+    return len(s) == 0
+  }
+  ```
+
+  </td></tr>
+  </tbody></table>
+
+- 零值切片（用`var`声明的切片）可立即使用，无需调用`make()`创建。
+
+  <table>
+  <thead><tr><th>Bad</th><th>Good</th></tr></thead>
+  <tbody>
+  <tr><td>
+
+  ```go
+  nums := []int{}
+  // or, nums := make([]int)
+
+  if add1 {
+    nums = append(nums, 1)
+  }
+
+  if add2 {
+    nums = append(nums, 2)
+  }
+  ```
+
+  </td><td>
+
+  ```go
+  var nums []int
+
+  if add1 {
+    nums = append(nums, 1)
+  }
+
+  if add2 {
+    nums = append(nums, 2)
+  }
+  ```
+
+  </td></tr>
+  </tbody></table>
+
+记住，虽然nil切片是有效的切片，但它不等于长度为0的切片（一个为nil，另一个不是），并且在不同的情况下（例如序列化），这两个切片的处理方式可能不同。
+
+## 7、初始化 Struct 引用
+
+在初始化结构引用时，请使用`&T{}`代替`new(T)`，以使其与结构体初始化一致。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+sval := T{Name: "foo"}
+
+// inconsistent
+sptr := new(T)
+sptr.Name = "bar"
+```
+
+</td><td>
+
+```go
+sval := T{Name: "foo"}
+
+sptr := &T{Name: "bar"}
+```
+
+</td></tr>
+</tbody></table>
+
+## 8、初始化 Maps
+
+对于空 map 请使用 `make(..)` 初始化， 并且 map 是通过编程方式填充的。
+这使得 map 初始化在表现上不同于声明，并且它还可以方便地在 make 后添加大小提示。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+var (
+  // m1 读写安全;
+  // m2 在写入时会 panic
+  m1 = map[T1]T2{}
+  m2 map[T1]T2
+)
+```
+
+</td><td>
+
+```go
+var (
+  // m1 读写安全;
+  // m2 在写入时会 panic
+  m1 = make(map[T1]T2)
+  m2 map[T1]T2
+)
+```
+
+</td></tr>
+<tr><td>
+
+声明和初始化看起来非常相似的。
+
+</td><td>
+
+声明和初始化看起来差别非常大。
+
+</td></tr>
+</tbody></table>
+
+在尽可能的情况下，请在初始化时提供 map 容量大小，详细请看 [指定Map容量提示](#指定Map容量提示)。
+
+
+另外，如果 map 包含固定的元素列表，则使用 map literals(map 初始化列表) 初始化映射。
+
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+m := make(map[T1]T2, 3)
+m[k1] = v1
+m[k2] = v2
+m[k3] = v3
+```
+
+</td><td>
+
+```go
+m := map[T1]T2{
+  k1: v1,
+  k2: v2,
+  k3: v3,
+}
+```
+
+</td></tr>
+</tbody></table>
+
+基本准则是：在初始化时使用 map 初始化列表 来添加一组固定的元素。否则使用 `make` (如果可以，请尽量指定 map 容量)。
+
