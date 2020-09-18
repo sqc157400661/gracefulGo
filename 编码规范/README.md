@@ -1,9 +1,9 @@
 # Go编码规范
 
 ## 规范分类
--  [must](./编码规范/must)   一定要执行的规范
--  [should](./编码规范/should) 强烈建议执行的规范，但不强求
-- [may](./编码规范/may)    可以执行的，供大家参考
+-  [must](./must)   一定要执行的规范
+-  [should](./should) 强烈建议执行的规范，但不强求
+- [may](./may)    可以执行的，供大家参考
 
 ## 参考文献列表
 - [uber-go/guide](https://github.com/xxjwxc/uber_go_guide_cn)
