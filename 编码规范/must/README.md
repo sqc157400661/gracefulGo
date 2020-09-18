@@ -458,3 +458,188 @@ m := map[T1]T2{
 
 基本准则是：在初始化时使用 map 初始化列表 来添加一组固定的元素。否则使用 `make` (如果可以，请尽量指定 map 容量)。
 
+## 9、优先使用 strconv 而不是 fmt
+
+将原语转换为字符串或从字符串转换时，`strconv`速度比`fmt`快。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+for i := 0; i < b.N; i++ {
+  s := fmt.Sprint(rand.Int())
+}
+```
+
+</td><td>
+
+```go
+for i := 0; i < b.N; i++ {
+  s := strconv.Itoa(rand.Int())
+}
+```
+
+</td></tr>
+<tr><td>
+
+```
+BenchmarkFmtSprint-4    143 ns/op    2 allocs/op
+```
+
+</td><td>
+
+```
+BenchmarkStrconv-4    64.2 ns/op    1 allocs/op
+```
+
+</td></tr>
+</tbody></table>
+
+
+
+### 10、避免字符串到字节的转换
+
+不要反复从固定字符串创建字节 slice。相反，请执行一次转换并捕获结果。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+for i := 0; i < b.N; i++ {
+  w.Write([]byte("Hello world"))
+}
+```
+
+</td><td>
+
+```go
+data := []byte("Hello world")
+for i := 0; i < b.N; i++ {
+  w.Write(data)
+}
+```
+
+</tr>
+<tr><td>
+
+```
+BenchmarkBad-4   50000000   22.2 ns/op
+```
+
+</td><td>
+
+```
+BenchmarkGood-4  500000000   3.25 ns/op
+```
+
+</td></tr>
+</tbody></table>
+
+
+## 11、指定Map容量提示
+
+在尽可能的情况下，在使用 `make()` 初始化的时候提供容量信息
+
+```go
+make(map[T1]T2, hint)
+```
+
+向`make()`提供容量提示会在初始化时尝试调整map的大小，这将减少在将元素添加到map时为map重新分配内存。
+
+
+注意，与slices不同。map capacity提示并不保证完全的抢占式分配，而是用于估计所需的hashmap bucket的数量。
+因此，在将元素添加到map时，甚至在指定map容量时，仍可能发生分配。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+m := make(map[string]os.FileInfo)
+
+files, _ := ioutil.ReadDir("./files")
+for _, f := range files {
+    m[f.Name()] = f
+}
+```
+
+</td><td>
+
+```go
+
+files, _ := ioutil.ReadDir("./files")
+
+m := make(map[string]os.FileInfo, len(files))
+for _, f := range files {
+    m[f.Name()] = f
+}
+```
+
+</td></tr>
+<tr><td>
+
+`m` 是在没有大小提示的情况下创建的； 在运行时可能会有更多分配。
+
+</td><td>
+
+`m` 是有大小提示创建的；在运行时可能会有更少的分配。
+
+</td></tr>
+</tbody></table>
+
+## 12、指定切片容量
+
+在尽可能的情况下，在使用`make()`初始化切片时提供容量信息，特别是在追加切片时。
+
+```go
+make([]T, length, capacity)
+```
+
+与maps不同，slice capacity不是一个提示：编译器将为提供给`make()`的slice的容量分配足够的内存，
+这意味着后续的append()`操作将导致零分配（直到slice的长度与容量匹配，在此之后，任何append都可能调整大小以容纳其他元素）。
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
+
+```go
+for n := 0; n < b.N; n++ {
+  data := make([]int, 0)
+  for k := 0; k < size; k++{
+    data = append(data, k)
+  }
+}
+```
+
+</td><td>
+
+```go
+for n := 0; n < b.N; n++ {
+  data := make([]int, 0, size)
+  for k := 0; k < size; k++{
+    data = append(data, k)
+  }
+}
+```
+
+</td></tr>
+<tr><td>
+
+```
+BenchmarkBad-4    100000000    2.48s
+```
+
+</td><td>
+
+```
+BenchmarkGood-4   100000000    0.21s
+```
+
+</td></tr>
+</tbody></table>
