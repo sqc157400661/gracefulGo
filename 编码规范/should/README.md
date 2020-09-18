@@ -1,6 +1,6 @@
 # 强烈建议执行的规范
 ## 1、代码行长度
-一行最长**不超过80个字符**，超过的使用换行展示，尽量保持格式优雅
+一行最长**不超过80个字符**，超过的使用换行展示，尽量保持格式优雅。
 
 ## 2、注释
 Go提供两种注释风格：
@@ -26,5 +26,53 @@ package av
 // retrun skill that you can learn.
 func PlayCangJingKongMovie(str string) (*skill, error) {
 ```
+## 3、减少逻辑代码的缩进
 
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+<tr><td>
 
+```go
+if err != nil {
+    // error handling.
+} else {
+    // normal code.
+}
+```
+
+</td><td>
+
+```go
+if err != nil {
+    // error handling.
+    return 
+}
+// normal code.
+```
+
+</td></tr>
+<tr><td>
+
+```go
+if x, err := f(); err != nil {
+    // error handling.
+    return
+} else {
+    // use x.
+}
+```
+
+</td><td>
+
+```go
+x, err := f()
+if err != nil {
+    // error handling
+    return
+}
+// use x
+```
+
+</td></tr>
+</tbody></table>
