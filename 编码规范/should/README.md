@@ -202,3 +202,15 @@ if err != nil {
 
 ## 6、处理错误
 不要将error赋值给匿名变量_
+
+## 7、可以清除因未重置丢失的切片元素中的指针而造成的临时性内存泄露
+```go
+func h() []*int {
+	s := []*int{new(int), new(int), new(int), new(int)}
+	// 使用此s切片 ...
+
+	s[0], s[len(s)-1] = nil, nil // 重置首尾元素指针
+	return s[1:3:3]
+}
+```
+
