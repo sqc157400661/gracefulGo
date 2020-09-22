@@ -643,3 +643,14 @@ BenchmarkGood-4   100000000    0.21s
 
 </td></tr>
 </tbody></table>
+
+## 13、断言要用2个参数接受,否则失败会导致恐慌
+```go
+package main
+
+func main() {
+	var x interface{} = true
+	_, _ = x.(int) // 断言失败，但不会导致恐慌。
+	_ = x.(int)    // 断言失败，并导致一个恐慌。
+}
+```

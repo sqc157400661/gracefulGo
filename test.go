@@ -2,20 +2,9 @@ package main
 
 import "fmt"
 
-func alwaysFalse() bool { return false }
 func main() {
-	switch alwaysFalse() {
-	case true:
-		fmt.Println("true")
-	case false:
-		fmt.Println("false")
-	}
-
-	switch alwaysFalse()
-	{
-	case true:
-		fmt.Println("true")
-	case false:
-		fmt.Println("false")
-	}
+	var x interface{} = true
+	_, _ = x.(int) // 断言失败，但不会导致恐慌。
+	_,a := x.(int)    // 断言失败，并导致一个恐慌。
+	fmt.Println(a)
 }
