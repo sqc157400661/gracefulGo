@@ -1,22 +1,23 @@
 package main
 
-import (
-	"fmt"
-	"time"
-)
+import "fmt"
 
 func main() {
-
-	go gotest(2)
-	go gotest(3)
-	go gotest(4)
-	go gotest(1)
-	time.Sleep(time.Second *2)
+	defer func() {
+		defer func() {
+			fmt.Println("3:", recover())
+		}()
+	}()
+	defer func() {
+		func() {
+			fmt.Println("2:", recover())
+		}()
+	}()
+	func() {
+		defer func() {
+			fmt.Println("1:", recover())
+		}()
+	}()
+	panic(121)
 }
 
-func gotest(a int){
-	if a == 1{
-		panic(1)
-	}
-	fmt.Println(a)
-}
