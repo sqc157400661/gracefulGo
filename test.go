@@ -1,17 +1,22 @@
 package main
 
-import "fmt"
-
-var a = &[]int{1, 2, 3}
-var i int
-func f() int {
-	i = 1
-	a = &[]int{7, 8, 9}
-	return 0
-}
+import (
+	"fmt"
+	"time"
+)
 
 func main() {
-	// 表达式"a"、"i"和"f()"的估值顺序未定义。
-	(*a)[i] = f()
-	fmt.Println(*a)
+
+	go gotest(2)
+	go gotest(3)
+	go gotest(4)
+	go gotest(1)
+	time.Sleep(time.Second *2)
+}
+
+func gotest(a int){
+	if a == 1{
+		panic(1)
+	}
+	fmt.Println(a)
 }
