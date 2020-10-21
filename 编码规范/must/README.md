@@ -137,23 +137,7 @@ type Client struct {
 
   [Avoid Embedding Types in Public Structs]: #avoid-embedding-types-in-public-structs
 
-嵌入 **不应该**:
-
-- 纯粹是为了美观或方便。
-- 使外部类型更难构造或使用。
-- 影响外部类型的零值。如果外部类型有一个有用的零值，则在嵌入内部类型之后应该仍然有一个有用的零值。
-- 作为嵌入内部类型的副作用，从外部类型公开不相关的函数或字段。
-- 公开未导出的类型。
-- 影响外部类型的复制形式。
-- 更改外部类型的API或类型语义。
-- 嵌入内部类型的非规范形式。
-- 公开外部类型的实现详细信息。
-- 允许用户观察或控制类型内部。
-- 通过包装的方式改变内部函数的一般行为，这种包装方式会给用户带来一些意料之外情况。
-
-简单地说，有意识地和有目的地嵌入。一种很好的测试体验是，
-"是否所有这些导出的内部方法/字段都将直接添加到外部类型"
-如果答案是`some`或`no`，不要嵌入内部类型-而是使用字段。
+。
 
 <table>
 <thead><tr><th>Bad</th><th>Good</th></tr></thead>
@@ -184,37 +168,7 @@ func (w *countingWriteCloser) Write(bs []byte) (int, error) {
 ```
 
 </td></tr>
-<tr><td>
 
-```go
-type Book struct {
-    // Bad: 指针更改零值的有用性
-    io.ReadWriter
-    // other fields
-}
-// later
-var b Book
-b.Read(...)  // panic: nil pointer
-b.String()   // panic: nil pointer
-b.Write(...) // panic: nil pointer
-```
-
-</td><td>
-
-```go
-type Book struct {
-    // Good: 有用的零值
-    bytes.Buffer
-    // other fields
-}
-// later
-var b Book
-b.Read(...)  // ok
-b.String()   // ok
-b.Write(...) // ok
-```
-
-</td></tr>
 <tr><td>
 
 ```go
