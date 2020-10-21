@@ -133,7 +133,7 @@ type Client struct {
 </tbody></table>
 
 内嵌应该提供切实的好处，比如以语义上合适的方式添加或增强功能。
-它应该在对用户不利影响的情况下完成这项工作（另请参见：`避免在公共结构中嵌入类型`[Avoid Embedding Types in Public Structs]）。
+它应该在对当前系统没有不利影响（另请参见：`避免在公共结构中嵌入类型`[Avoid Embedding Types in Public Structs]）。
 
   [Avoid Embedding Types in Public Structs]: #avoid-embedding-types-in-public-structs
 
